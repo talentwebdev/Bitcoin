@@ -81,7 +81,7 @@ app.post("/upload", async function(req, res, next){
                 await sharp("c:/upload-images/original/"+filename)
                   .resize(32, 32)
                   .toFormat("png")
-                  .toFile("c:/upload-images/1/"+outputfilename)
+                  .toFile("c:/upload-images/32/"+outputfilename)
                   .then(
                     (resolve) => { console.log("done") },
                     (err) => { console.log("error", err) }
@@ -89,7 +89,7 @@ app.post("/upload", async function(req, res, next){
                 await sharp("c:/upload-images/original/"+filename)
                   .resize(64, 64)
                   .toFormat("png")
-                  .toFile("c:/upload-images/2/"+outputfilename)
+                  .toFile("c:/upload-images/64/"+outputfilename)
                   .then(
                     (resolve) => { console.log("done") },
                     (err) => { console.log("error", err) }
@@ -97,7 +97,14 @@ app.post("/upload", async function(req, res, next){
                 await sharp("c:/upload-images/original/"+filename)
                   .resize(128, 128)
                   .toFormat("png")
-                  .toFile("c:/upload-images/3/"+outputfilename)
+                  .toFile("c:/upload-images/128/"+outputfilename)
+                  .then(
+                    (resolve) => { console.log("done") },
+                    (err) => { console.log("error", err) }
+                  );
+                await sharp("c:/upload-images/original/"+filename)
+                  .toFormat("png")
+                  .toFile("c:/upload-images/svg/"+outputfilename)
                   .then(
                     (resolve) => { console.log("done") },
                     (err) => { console.log("error", err) }
@@ -105,17 +112,17 @@ app.post("/upload", async function(req, res, next){
                 
               }
               else{
-                await resize("c:/upload-images/original/"+filename, "c:/upload-images/1/"+filename, 32, 32, 90)
+                await resize("c:/upload-images/original/"+filename, "c:/upload-images/32/"+filename, 32, 32, 90)
                 .then(
                   (resolve) => {console.log("done");},
                   (err) => {}
                 );
-                await resize("c:/upload-images/original/"+filename, "c:/upload-images/2/"+filename, 64, 64, 90)
+                await resize("c:/upload-images/original/"+filename, "c:/upload-images/64/"+filename, 64, 64, 90)
                   .then(
                     (resolve) => {console.log("done");},
                     (err) => {}
                   );
-                await resize("c:/upload-images/original/"+filename, "c:/upload-images/3/"+filename, 128, 128, 90)
+                await resize("c:/upload-images/original/"+filename, "c:/upload-images/128/"+filename, 128, 128, 90)
                   .then(
                     (resolve) => {console.log("done");},
                     (err) => {}
