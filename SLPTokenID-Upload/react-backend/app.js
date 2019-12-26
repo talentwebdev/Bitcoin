@@ -1,3 +1,5 @@
+require('dotenv').config()
+
 var createError = require('http-errors');
 var express = require('express');
 var path = require('path');
@@ -13,6 +15,14 @@ var usersRouter = require('./routes/users');
 var FileReader = require('filereader')
 var bitcoin = require("./modules/bitcoin");
 const sharp = require('sharp');
+
+// git module
+const Octokat = require("octokat");
+const git_helper = require("./modules/git-helper");
+const helper = git_helper.init(new Octokat({
+  username: process.env.GITHUB_USERNAME, 
+  password: process.env.GITHUB_PASSWORD
+}));
 
 var app = express();
 
@@ -48,7 +58,7 @@ app.post("/upload", async function(req, res, next){
           let file = req.files.file;
           var filename = req.body.tokenid + "." + file.name.split(".").pop();
                     //Use the mv() method to place the file in upload directory (i.e. "uploads")
-          file.mv('c:/upload-images/original/' + filename, function(err){
+          file.mv('./upload-images/' + filename, function(err){
             if (err)
               return res.status(500).send(err);
             
@@ -57,6 +67,7 @@ app.post("/upload", async function(req, res, next){
             let btoa = require("btoa");
             var buffer = btoa(file.data);
 
+            // verify the upload request
             try{
               if(!bitcoin("data:"+file.mimetype+";base64,"+buffer, req.body.signature, req.body.legacy))
               {
@@ -75,120 +86,92 @@ app.post("/upload", async function(req, res, next){
            
             
             async function func(){
-              if(file.mimetype == "image/svg+xml")
-              {
-                var outputfilename = req.body.tokenid + "." + "png";
-                await sharp("c:/upload-images/original/"+filename)
-                  .resize(32, 32)
-                  .toFormat("png")
-                  .toFile("c:/upload-images/32/"+outputfilename)
-                  .then(
-                    (resolve) => { console.log("done") },
-                    (err) => { console.log("error", err) }
-                  );
-                await sharp("c:/upload-images/original/"+filename)
-                  .resize(64, 64)
-                  .toFormat("png")
-                  .toFile("c:/upload-images/64/"+outputfilename)
-                  .then(
-                    (resolve) => { console.log("done") },
-                    (err) => { console.log("error", err) }
-                  );
-                await sharp("c:/upload-images/original/"+filename)
-                  .resize(128, 128)
-                  .toFormat("png")
-                  .toFile("c:/upload-images/128/"+outputfilename)
-                  .then(
-                    (resolve) => { console.log("done") },
-                    (err) => { console.log("error", err) }
-                  );
-                await sharp("c:/upload-images/original/"+filename)
-                  .toFormat("png")
-                  .toFile("c:/upload-images/svg/"+outputfilename)
-                  .then(
-                    (resolve) => { console.log("done") },
-                    (err) => { console.log("error", err) }
-                  );
-                
-              }
-              else{
-                await resize("c:/upload-images/original/"+filename, "c:/upload-images/32/"+filename, 32, 32, 90)
+              var outputfilename = req.body.tokenid + "." + "png";
+              
+              // copy and optimize the images
+              await sharp("./upload-images/"+filename)
+                .resize(32, 32)
+                .toFormat("png")
+                .toFile("./slp-token-icons/32/"+outputfilename)
                 .then(
-                  (resolve) => {console.log("done");},
-                  (err) => {}
+                  (resolve) => { console.log("done") },
+                  (err) => { console.log("error", err) }
                 );
-                await resize("c:/upload-images/original/"+filename, "c:/upload-images/64/"+filename, 64, 64, 90)
-                  .then(
-                    (resolve) => {console.log("done");},
-                    (err) => {}
-                  );
-                await resize("c:/upload-images/original/"+filename, "c:/upload-images/128/"+filename, 128, 128, 90)
-                  .then(
-                    (resolve) => {console.log("done");},
-                    (err) => {}
-                  );
-              }
               
 
+              await sharp("./upload-images/"+filename)
+                .resize(64, 64)
+                .toFormat("png")
+                .toFile("./slp-token-icons/64/"+outputfilename)
+                .then(
+                  (resolve) => { console.log("done") },
+                  (err) => { console.log("error", err) }
+                );
+
+              await sharp("./upload-images/"+filename)
+                .resize(128, 128)
+                .toFormat("png")
+                .toFile("./slp-token-icons/128/"+outputfilename)
+                .then(
+                  (resolve) => { console.log("done") },
+                  (err) => { console.log("error", err) }
+                );
+
                 /*
-              var git = require("./modules/git");
-              await git.push("https://github.com/zhupingjin/image-repo", "./workiupload-images")
-                  .then(
-                    (resolve) => { console.log("git pushed"); },
-                    (err) => {}
-                  );
-                  */
-                const USER = 'zhupingjin';
-                const PASS = 'learnforkorea19980609';
-                const REPO = 'github.com/zhupingjin/image-repo';
-                const remote = `https://${USER}:${PASS}@${REPO}`;
+              await sharp("./upload-images/"+filename)
+                .toFormat("png")
+                .toFile("./slp-token-icons/original/"+outputfilename)
+                .then(
+                  (resolve) => { console.log("done") },
+                  (err) => { console.log("error", err) }
+                );            
+                */
+              
+              //
+              var changeSetArray = [
+                // 32 * 32
+                {
+                  delete: false,
+                  new: true,
+                  path: "32/" + outputfilename, 
+                  payload: await git_helper.readfile("./../slp-token-icons/32/"+outputfilename)
+                },
+                // 64 * 64
+                {
+                  delete: false,
+                  new: true,
+                  path: "64/" + outputfilename, 
+                  payload: await git_helper.readfile("./../slp-token-icons/64/"+outputfilename)
+                },
+                // 128 * 128
+                {
+                  delete: false,
+                  new: true,
+                  path: "128/" + outputfilename, 
+                  payload: await git_helper.readfile("./../slp-token-icons/128/"+outputfilename)
+                },
+                // original image
+                {
+                  delete: false,
+                  new: true,
+                  path: (file.mimetype == "image/svg+xml" ? ("svg/" + filename) : ("original/" + filename)), 
+                  payload: await git_helper.readfile("./../upload-images/" + filename)
+                }
+              ]
 
-                require('simple-git')("c:/upload-images")
-                          .add('./*')
-                          .commit("first commit!")
-                          .push('origin1', 'master');
-/*
-                const gitP = require('simple-git/promise');
-                const git = gitP("c:/upload-images");
-
-
-
-                git.checkIsRepo()
-                  .then(isRepo => {
-                    
-                    if(!isRepo)
-                    {
-                      require('simple-git')("c:/upload-images")
-                          .init()
-                          .add('./*')
-                          .commit("first commit!")
-                          .addRemote('origin1', remote)
-                          .push('origin1', 'master');
-                    }
-                    else
-                    {
-                      
-                    }
-                  });
-                  */
-                
-/*
-                await require('simple-git/promise')("./upload-images")
-                 .init()
-                 .add('./*')
-                 .commit("first commit!")
-                 .addRemote('origin1', remote)
-                 .push('origin1', 'master');
-                 */
-                 /*
-                await require('simple-git')("./upload-images")
-                  .removeRemote("origin1");
-                  */
+              try{
+                await helper.push(process.env.GITHUB_USERNAME, "newBranch", "SLP Token Icon Commit", null, changeSetArray, false);
+                console.log("file uploaded");
+                res.send('File uploaded!');
+              }catch(e)
+              {
+                res.send("Can not submit ");
+                console.log(e);
+                return;
+              }
             };
             
             func();
-            
-            res.send('File uploaded!');
           });
           /*
           let btoa = require("btoa");
@@ -226,17 +209,4 @@ app.use(function(err, req, res, next) {
   res.status(err.status || 500);
   res.render('error');
 });
-
-
-/*
-app.route('/upload')
-.post(function (req, res, next) {
-  
-  var form = new formidable.IncomingForm();
-    //Formidable uploads to operating systems tmp dir by default
-    form.uploadDir = "./img";       //set upload directory
-    form.keepExtensions = true;     //keep file extension
-});
-*/
-
 module.exports = app;

@@ -46,7 +46,7 @@ class App extends React.Component {
           signature: "",
           slptokenid: "",
           sampledata: {
-            privatekey:"KxtfZsBCJKhp86rsqy8UxX84mCqFXZzW1f8ArU6RTFXAF2VGpfbE",
+            privatekey:"L4XVRkgPMV8vHaRsZZAaDUwdri7GeFn8YE7RwJm1mNEPXdNtvV2Z",
             address: "13Js7D3q4KvfSqgKN8LpNq57gcahrVc5JZ" ,
             signature: ""
           }
@@ -59,7 +59,6 @@ class App extends React.Component {
         this.onClickSubmit = this.onClickSubmit.bind(this);
         this.onChangeTokenID = this.onChangeTokenID.bind(this);
     }
-
     onChangeTokenID(e)
     {
       this.setState({slptokenid: e.target.value});
@@ -262,9 +261,8 @@ class App extends React.Component {
               <TextField
                 value={this.state.sampledata.signature}
                 label="Sample Signature"
-              >
-
-              </TextField>
+              >              
+              </TextField>              
             </Grid>
           </Grid>
         </div>

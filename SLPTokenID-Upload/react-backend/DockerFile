@@ -21,6 +21,6 @@ COPY routes/* ./routes/
 COPY views/* ./views/
 COPY app.js ./
 
-EXPOSE 3000
+EXPOSE 3001
 
 CMD [ "node", "./bin/www" ]
