@@ -62,9 +62,9 @@ export function getSLPAddressFromTokenID(tokenid, callback)
                             const inputs = graphTxn.inputs;
                             const outputs = graphTxn.outputs;
                             if(outputs.length != 0)
-                                callback(outputs[0].address);
+                                callback({ address: outputs[0].address, name: graphTxn.details.name} );
                             else if(inputs.length != 0)
-                                callback(inputs[0].address);   
+                                callback({ address: inputs[0].address, name: graphTxn.details.name} );   
                             throw BreakException;        
                         }
                     });

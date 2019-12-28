@@ -1,41 +1,42 @@
+const simple_git = require("simple-git/promise")
+const USER = process.env.GITHUB_USERNAME
+const TOKEN = process.env.GITHUB_TOKEN
 
-async function push(workingpath, remote)
-{
-    return new Promise( (resolve, reject) => {
-        require('simple-git')(workingpath)
-            .init()
-            .add('./*')
-            .commit("Commit!")
-            .push(remote, 'master');
-        resolve();
+function init(opts)
+{   
+    const helper = {}
 
-    });
+    const options = {...opts};
+    const remote = `https://${USER}:${TOKEN}@${'github.com/'+USER+"/"+options.repo_name}`
+    console.log(remote)
+
+    helper.clone = function()
+    {
+        console.log("work_dir", options.work_dir)
+        return simple_git(options.work_dir).silent(true)
+                .clone(remote)
+    }
+
+    helper.push = async function(commitMessage, branchName)
+    {
+        var commit = {}
+        return new Promise((resolve) => {
+            require("simple-git")(options.work_dir+"/"+options.repo_name).silent(true)
+                            .add("./*")
+                            .commit(commitMessage, (err, data) => {commit = data;})
+                            .push(['-u', 'origin', branchName], (err, data) => { console.log(data); resolve(commit) })
+        })
+    }
+
+    helper.log = async function()
+    {
+        return new Promise((resolve) => {
+            require("simple-git")(options.work_dir+"/"+options.repo_name).silent(true)
+                            .log((data) => {console.log("log", data)})
+        })
+    }
+
+    return helper
 }
 
-async function clone(repoPath)
-{
-    const remote = 'https://zhupingjin:aaaaassss10081423!@#$@github.com/zhupingjin/slp-token-icons';
-
-    return new Promise( (resolve) => {
-        require('simple-git')()
-            .clone(repoPath);
-        resolve();
-    });
-}
-
-async function addRemote(workingpath, remotename)
-{
-    const remote = 'https://zhupingjin:aaaaassss10081423!@#$@github.com/zhupingjin/slp-token-icons';
-
-    return new Promise( (resolve) => {
-        require('simple-git')(workingpath)
-            .addRemote(remotename, 'https://zhupingjin:aaaaassss10081423!@#$@github.com/zhupingjin/slp-token-icons');
-        resolve();
-    });
-}
-
-module.exports = {
-    push: push,
-    clone: clone,
-    addRemote: addRemote
-}
+module.exports.init = init 

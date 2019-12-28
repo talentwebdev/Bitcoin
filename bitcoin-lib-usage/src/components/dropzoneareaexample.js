@@ -23,9 +23,9 @@ class DropzoneAreaExample extends Component{
     bitcoin.getSLPAddressFromTokenID("959a6818cba5af8aba391d3f7649f5f6a5ceb6cdcd2c2a3dcb5d2fbfc4b08e98", this.handleGetSLPAddress);
   }
 
-  handleGetSLPAddress(address)
+  handleGetSLPAddress(token)
   {
-    var address1 = bitcoin.getLegacyFromSLPAddress(address);
+    var address1 = bitcoin.getLegacyFromSLPAddress(token.address);
     //var address1 = "13Js7D3q4KvfSqgKN8LpNq57gcahrVc5JZ";
     var verified = bitcoin.verifyMessage("hello", "H/DIn8uA1scAuKLlCx+/9LnAcJtwQQ0PmcPrJUq90aboLv3fH5fFvY+vmbfOSFEtGarznYli6ShPr9RXwY9UrIY=", address1);
   }

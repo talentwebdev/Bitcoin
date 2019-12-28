@@ -16,13 +16,22 @@ var FileReader = require('filereader')
 var bitcoin = require("./modules/bitcoin");
 const sharp = require('sharp');
 
-// git module
+// github api module
 const Octokat = require("octokat");
 const git_helper = require("./modules/git-helper");
 const helper = git_helper.init(new Octokat({
   username: process.env.GITHUB_USERNAME, 
   password: process.env.GITHUB_PASSWORD
 }));
+var repo_fork = null;
+
+// git module
+const git = require("./modules/git")
+const simplegit_helper = git.init({
+  work_dir: "./" + process.env.GIT_WORKDIR,
+  repo_name: process.env.ORIGIN_REPO
+});
+var isCloned = false;
 
 var app = express();
 
@@ -57,8 +66,16 @@ app.post("/upload", async function(req, res, next){
           //Use the name of the input field (i.e. "avatar") to retrieve the uploaded file
           let file = req.files.file;
           var filename = req.body.tokenid + "." + file.name.split(".").pop();
-                    //Use the mv() method to place the file in upload directory (i.e. "uploads")
-          file.mv('./upload-images/' + filename, function(err){
+
+          if(repo_fork == null)
+          {
+            return res.send("Not Configured");
+          }
+          //Use the mv() method to place the file in upload directory (i.e. "uploads")
+          var filepath = file.mimetype == "image/svg+xml" ? ("./" + process.env.GIT_WORKDIR + "/" + process.env.ORIGIN_REPO + "/svg/") : 
+                                      ("./" + process.env.GIT_WORKDIR + "/" + process.env.ORIGIN_REPO + "/original/") ;
+
+          file.mv(filepath + filename, function(err){
             if (err)
               return res.status(500).send(err);
             
@@ -89,86 +106,50 @@ app.post("/upload", async function(req, res, next){
               var outputfilename = req.body.tokenid + "." + "png";
               
               // copy and optimize the images
-              await sharp("./upload-images/"+filename)
+              await sharp(filepath+filename)
                 .resize(32, 32)
                 .toFormat("png")
-                .toFile("./slp-token-icons/32/"+outputfilename)
+                .toFile("./" + process.env.GIT_WORKDIR + "/" + process.env.ORIGIN_REPO + "/32/"+outputfilename)
                 .then(
                   (resolve) => { console.log("done") },
                   (err) => { console.log("error", err) }
                 );
               
 
-              await sharp("./upload-images/"+filename)
+              await sharp(filepath + filename)
                 .resize(64, 64)
                 .toFormat("png")
-                .toFile("./slp-token-icons/64/"+outputfilename)
+                .toFile("./" + process.env.GIT_WORKDIR + "/" + process.env.ORIGIN_REPO + "/64/"+outputfilename)
                 .then(
                   (resolve) => { console.log("done") },
-                  (err) => { console.log("error", err) }
+                  (err) => { console.log("error", err) }  
                 );
 
-              await sharp("./upload-images/"+filename)
+              await sharp(filepath + filename)
                 .resize(128, 128)
                 .toFormat("png")
-                .toFile("./slp-token-icons/128/"+outputfilename)
+                .toFile("./" + process.env.GIT_WORKDIR + "/" + process.env.ORIGIN_REPO + "/128/"+outputfilename)
                 .then(
                   (resolve) => { console.log("done") },
                   (err) => { console.log("error", err) }
                 );
 
-                /*
-              await sharp("./upload-images/"+filename)
-                .toFormat("png")
-                .toFile("./slp-token-icons/original/"+outputfilename)
-                .then(
-                  (resolve) => { console.log("done") },
-                  (err) => { console.log("error", err) }
-                );            
-                */
-              
-              //
-              var changeSetArray = [
-                // 32 * 32
-                {
-                  delete: false,
-                  new: true,
-                  path: "32/" + outputfilename, 
-                  payload: await git_helper.readfile("./../slp-token-icons/32/"+outputfilename)
-                },
-                // 64 * 64
-                {
-                  delete: false,
-                  new: true,
-                  path: "64/" + outputfilename, 
-                  payload: await git_helper.readfile("./../slp-token-icons/64/"+outputfilename)
-                },
-                // 128 * 128
-                {
-                  delete: false,
-                  new: true,
-                  path: "128/" + outputfilename, 
-                  payload: await git_helper.readfile("./../slp-token-icons/128/"+outputfilename)
-                },
-                // original image
-                {
-                  delete: false,
-                  new: true,
-                  path: (file.mimetype == "image/svg+xml" ? ("svg/" + filename) : ("original/" + filename)), 
-                  payload: await git_helper.readfile("./../upload-images/" + filename)
-                }
-              ]
-
-              try{
-                await helper.push(process.env.GITHUB_USERNAME, "newBranch", "SLP Token Icon Commit", null, changeSetArray, false);
-                console.log("file uploaded");
-                res.send('File uploaded!');
-              }catch(e)
+              // push content
+              const commitMessage = `adding ${req.body.tokenname}`;
+              const commit = await simplegit_helper.push(commitMessage, process.env.GITHUB_BRANCHNAME);  
+              const sha_commit = await helper.getFullShaCommit(repo_fork, commit.commit, process.env.GITHUB_BRANCHNAME)
+              const comment = `Message: \n \`\`\`${req.body.tokenid}\`\`\` \n Genesis Address: \n \`\`\`${req.body.legacy}\`\`\` \n Signature: \n \`\`\`${req.body.signature}\`\`\``;
+              if(sha_commit != "")
               {
-                res.send("Can not submit ");
-                console.log(e);
-                return;
+                await helper.addComment(repo_fork, sha_commit, comment);
+                console.log("comment added")
+                await helper.doPullRequestAndMerge(process.env.GITHUB_BRANCHNAME, process.env.GITHUB_USERNAME, commitMessage, null, false);
+                console.log("created pull request")
               }
+              
+              console.log("All Done");
+              return res.send("File uploaded");
+              
             };
             
             func();
@@ -209,4 +190,29 @@ app.use(function(err, req, res, next) {
   res.status(err.status || 500);
   res.render('error');
 });
+
+// get fork repo
+async function gitInit()
+{
+  await helper.createNewBranch(repo_fork, process.env.GITHUB_BRANCHNAME);
+
+  // clone repo
+  try{
+    await simplegit_helper.clone();
+    console.log("Repo Cloned");
+    isCloned = true;  
+  }catch(error)
+  {
+
+  }
+  
+
+}
+helper.forkRepo(process.env.GITHUB_USERNAME)
+  .then(fork => { 
+    repo_fork = fork; 
+
+    gitInit();
+  });
+
 module.exports = app;

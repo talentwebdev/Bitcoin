@@ -26,7 +26,7 @@ var readfile = async function(filename){
 
     fs.readFile(filePath, function(err,data){
         if (!err) {
-            console.log('received data: ' + data);
+            //console.log('received data: ' + data);
 
             resolve(data);
         } else {
@@ -169,7 +169,8 @@ const init = function(octo) {
   helper.doPullRequestAndMerge = Promise.coroutine(function*(branchName, username, commitMessage, prBody, autoMerge) {
     console.log('checking pulll requests')
     var pullRequestArray = yield originRepo.pulls.fetch({head: username + ':' + branchName})
-    if (pullRequestArray.length != 0) {
+    console.log("checking pull request finished:", pullRequestArray);
+    if (pullRequestArray.items.length === 0) {
       console.log('creating pulll request')
       const pullRequest = yield originRepo.pulls.create({
         title: commitMessage,
@@ -210,6 +211,27 @@ const init = function(octo) {
         pr: pullRequestArray
       }
     }
+  })
+
+
+  helper.addComment = Promise.coroutine(function*(fork, sha_commit, comment){
+
+    fork.commits(sha_commit).comments.create({
+      body: comment
+    })
+  })
+
+  helper.getFullShaCommit = Promise.coroutine(function*(fork, sha, branchName){
+    var commits = yield fork.commits.fetch()
+
+    for(var i = 0 ; i < commits.items.length ; i++)
+    {
+      if(sha != "" && commits.items[i].sha.indexOf(sha) == 0)
+      {
+        return commits.items[i].sha
+      }
+    }
+    return ""
   })
 
   return helper
