@@ -41,8 +41,7 @@ class App extends React.Component {
         this.state = { pictures: [], previewimage: "", 
           selectimage: false,
           slpaddress: {
-            fetchingaddress: false, slpaddress: "", fetchedaddress: false, wrongtoken: false, legacy: "",
-            tokenName: ""
+            fetchingaddress: false, slpaddress: "", fetchedaddress: false, wrongtoken: false, legacy: ""
           },
           signature: "",
           slptokenid: "",
@@ -118,16 +117,10 @@ class App extends React.Component {
       this.setState({signature: e.target.value});
     }
 
-    onGetSLPAddress(token)
+    onGetSLPAddress(address)
     {
-      if(token != null)
-        this.setState({slpaddress: { ...this.state.slpaddress, fetchedaddress: true, 
-                      fetchingaddress: false, 
-                      wrongtoken: false, 
-                      slpaddress: token.address, 
-                      legacy: bitcoin.getLegacyFromSLPAddress(token.address),
-                      tokenName: token.name
-                    }});
+      if(address != null)
+        this.setState({slpaddress: { ...this.state.slpaddress, fetchedaddress: true, fetchingaddress: false, wrongtoken: false, slpaddress: address, legacy: bitcoin.getLegacyFromSLPAddress(address)}});
       else
       {
         this.setState({slpaddress: {...this.state.slpaddress, fetchingaddress: false, wrongtoken: true}});
@@ -139,7 +132,6 @@ class App extends React.Component {
       var formData = new FormData;
       formData.append("file", this.state.pictures[this.state.pictures.length-1]);
       formData.append("tokenid", this.state.slptokenid);
-      formData.append("tokenname", this.state.slpaddress.tokenName);
       formData.append("signature", this.state.signature);
       formData.append("legacy", this.state.slpaddress.legacy);
 
@@ -174,7 +166,7 @@ class App extends React.Component {
                   withIcon={true}
                   buttonText='Choose images'
                   onChange={this.onDrop}
-                  imgExtension={['.png', '.svg']}
+                  imgExtension={['.jpg', '.gif', '.png', '.gif', '.svg']}
                   maxFileSize={5242880}
                   key="imageuploader"
                   name="file"
@@ -232,18 +224,6 @@ class App extends React.Component {
                     disabled
                     variant="outlined"
                     value={this.state.slpaddress.legacy}
-                    validators={['required']}
-                    errorMessages={['this field is required']}
-                />
-              </Grid>
-              <Grid item xs={12}>
-                <TextValidator
-                    className={classes.imagedata}
-                    id="outlined-multiline-static"
-                    label="Token Name"
-                    disabled
-                    variant="outlined"
-                    value={this.state.slpaddress.tokenName}
                     validators={['required']}
                     errorMessages={['this field is required']}
                 />

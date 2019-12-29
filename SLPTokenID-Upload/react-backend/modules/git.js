@@ -24,7 +24,7 @@ function init(opts)
             require("simple-git")(options.work_dir+"/"+options.repo_name).silent(true)
                             .add("./*")
                             .commit(commitMessage, (err, data) => {commit = data;})
-                            .push(['-u', 'origin', branchName], (err, data) => { console.log(data); resolve(commit) })
+                            .push(['-u', 'origin', branchName], (err, data) => { console.log("pushed", data); resolve(commit) })
         })
     }
 

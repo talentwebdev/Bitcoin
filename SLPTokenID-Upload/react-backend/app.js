@@ -32,6 +32,8 @@ const simplegit_helper = git.init({
   repo_name: process.env.ORIGIN_REPO
 });
 var isCloned = false;
+console.log(process.env.GITHUB_USERNAME);
+console.log(process.env.GITHUB_PASSWORD);
 
 var app = express();
 
@@ -135,12 +137,15 @@ app.post("/upload", async function(req, res, next){
                 );
 
               // push content
+              console.log("pushing updates ... ");
               const commitMessage = `adding ${req.body.tokenname}`;
               const commit = await simplegit_helper.push(commitMessage, process.env.GITHUB_BRANCHNAME);  
+              console.log("pushied updates: ", commit.commit);
               const sha_commit = await helper.getFullShaCommit(repo_fork, commit.commit, process.env.GITHUB_BRANCHNAME)
               const comment = `Message: \n \`\`\`${req.body.tokenid}\`\`\` \n Genesis Address: \n \`\`\`${req.body.legacy}\`\`\` \n Signature: \n \`\`\`${req.body.signature}\`\`\``;
               if(sha_commit != "")
               {
+                console.log("adding comment");
                 await helper.addComment(repo_fork, sha_commit, comment);
                 console.log("comment added")
                 await helper.doPullRequestAndMerge(process.env.GITHUB_BRANCHNAME, process.env.GITHUB_USERNAME, commitMessage, null, false);

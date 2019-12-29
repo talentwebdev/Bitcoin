@@ -9,17 +9,21 @@ WORKDIR /usr/src/app
 COPY package*.json ./
 
 RUN npm install
+RUN npm install -g git
+RUN git config --global user.email "slptoken@example.com"
+RUN git config --global user.name "slptoken"
 # If you are building your code for production
 # RUN npm ci --only=production
 
 
 # Bundle app source
-COPY bin/* ./bin/
-COPY modules/* ./modules/
-COPY public/* ./public/
-COPY routes/* ./routes/
-COPY views/* ./views/
+COPY bin/* ./
+COPY modules/* ./
+COPY public/* ./
+COPY routes/* ./
+COPY views/* ./
 COPY app.js ./
+RUN mkdir gitrepo
 
 EXPOSE 3001
 
