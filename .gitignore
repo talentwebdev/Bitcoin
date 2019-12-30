@@ -102,3 +102,8 @@ dist
 
 # TernJS port file
 .tern-port
+SLPTokenID-Upload/react-backend/slp-token-icons/
+SLPTokenID-Upload/react-backend/gitrepo/slp-token-icons/
+slpserve/
+Electron-Cash/
+bitcore-lib-cash/

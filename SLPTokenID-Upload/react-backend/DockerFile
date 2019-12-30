@@ -17,13 +17,19 @@ RUN git config --global user.name "slptoken"
 
 
 # Bundle app source
-COPY bin/* ./
-COPY modules/* ./
-COPY public/* ./
-COPY routes/* ./
-COPY views/* ./
+COPY bin/ ./bin/
+COPY modules/ ./modules/
+COPY public/ ./public/
+COPY routes ./routes/
+COPY views ./views/
 COPY app.js ./
+COPY .env ./
+COPY .dockerignore ./
+COPY Dockerfile ./
 RUN mkdir gitrepo
+
+#COPY . .
+
 
 EXPOSE 3001
 

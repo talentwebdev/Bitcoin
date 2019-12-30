@@ -2,19 +2,16 @@ version: '3'
 
 services: 
     backend: 
-        build: "./react-backend"
-        volumes: 
-            - ./react-backend:/usr/src/app
+        build: 
+            context: ./react-backend
         expose:
             - 3001
         ports: 
             - "3001:3001"
+
     frontend: 
         build: "./client"
-        volumes: 
-            - ./client:/usr/src/app/client
         expose: 
             - 3000
         ports: 
             - "3000:3000"
-
