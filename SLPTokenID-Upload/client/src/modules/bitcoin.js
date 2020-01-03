@@ -1,5 +1,5 @@
 
-import {bitcore, Utils} from "slpjs"
+import {Utils} from "slpjs"
 
 const axios = require("axios");
 
@@ -7,10 +7,10 @@ export function signMessage(message, privateKey)
 {
     var bitcore1 = require("bitcore-lib");
 
-    var privateKey = bitcore1.PrivateKey(privateKey);
-    var message = bitcore1.Message(message);
+    var private_key = bitcore1.PrivateKey(privateKey);
+    var message_obj = bitcore1.Message(message);
 
-    var signature = message.sign(privateKey);
+    var signature = message_obj.sign(private_key);
     return signature;
 }
 
@@ -57,13 +57,13 @@ export function getSLPAddressFromTokenID(tokenid, callback)
                     response.data.g.forEach(element => {
                     
                         const graphTxn = element.graphTxn;
-                        if(graphTxn.txid == tokenid)
+                        if(graphTxn.txid === tokenid)
                         {
                             const inputs = graphTxn.inputs;
                             const outputs = graphTxn.outputs;
-                            if(outputs.length != 0)
+                            if(outputs.length !== 0)
                                 callback(outputs[0].address);
-                            else if(inputs.length != 0)
+                            else if(inputs.length !== 0)
                                 callback(inputs[0].address);   
                             throw BreakException;        
                         }

@@ -10,27 +10,11 @@ COPY package*.json ./
 
 RUN npm install
 RUN npm install -g git
-RUN git config --global user.email "slptoken@example.com"
-RUN git config --global user.name "slptoken"
+RUN git config --global user.email "info@token.land"
+RUN git config --global user.name "tokenland"
 # If you are building your code for production
 # RUN npm ci --only=production
 
+COPY . .
 
-# Bundle app source
-COPY bin/ ./bin/
-COPY modules/ ./modules/
-COPY public/ ./public/
-COPY routes ./routes/
-COPY views ./views/
-COPY app.js ./
-COPY .env ./
-COPY .dockerignore ./
-COPY Dockerfile ./
-RUN mkdir gitrepo
-
-#COPY . .
-
-
-EXPOSE 3001
-
-CMD [ "node", "./bin/www" ]
+CMD [ "npm", "start" ]

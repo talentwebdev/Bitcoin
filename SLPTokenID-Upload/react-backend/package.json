@@ -6,6 +6,7 @@
     "start": "node ./bin/www"
   },
   "dependencies": {
+    "atob": "^2.1.2",
     "bitcore-lib-cash": "^8.13.2",
     "bitcore-message": "^1.0.4",
     "bluebird": "^3.7.2",
@@ -26,6 +27,7 @@
     "morgan": "^1.9.1",
     "object-hash": "^2.0.1",
     "octokat": "^0.10.0",
+    "sha256": "^0.2.0",
     "sharp": "^0.23.4",
     "shart": "0.0.4",
     "simple-git": "^1.129.0",

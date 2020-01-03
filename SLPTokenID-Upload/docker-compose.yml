@@ -4,14 +4,11 @@ services:
     backend: 
         build: 
             context: ./react-backend
-        expose:
-            - 3001
         ports: 
             - "3001:3001"
 
     frontend: 
-        build: "./client"
-        expose: 
-            - 3000
+        build:
+            context: "./client"
         ports: 
             - "3000:3000"

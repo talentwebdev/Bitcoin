@@ -1,16 +1,19 @@
 import React from 'react';
 import ImageUploader from 'react-images-upload';
 import * as bitcoin from "./modules/bitcoin";
-import { makeStyles, withStyles } from '@material-ui/core/styles';
+import { withStyles } from '@material-ui/core/styles';
 import {signMessage} from "./modules/sign";
 import Grid from '@material-ui/core/Grid';
 import Image from 'material-ui-image';
 import TextField from '@material-ui/core/TextField';
 import Fade from "@material-ui/core/Fade";
 import LinearProgress from "@material-ui/core/LinearProgress";
-import { Button } from '@material-ui/core';
+import { Button, IconButton } from '@material-ui/core';
 import CloudUploadIcon from "@material-ui/icons/CloudUpload";
+import FileCopyIcon from '@material-ui/icons/FileCopy';
 import { ValidatorForm, TextValidator } from 'react-material-ui-form-validator';
+import InputAdornment from '@material-ui/core/InputAdornment';
+import {CopyToClipboard} from 'react-copy-to-clipboard';
 import axios from "axios";
 
 const useStyles = theme => ({
@@ -61,7 +64,15 @@ class App extends React.Component {
         this.onInputSignature = this.onInputSignature.bind(this);
         this.onClickSubmit = this.onClickSubmit.bind(this);
         this.onChangeTokenID = this.onChangeTokenID.bind(this);
+        this.onCopyImageHash = this.onCopyImageHash.bind(this);
     }
+
+    onCopyImageHash()
+    {
+
+      document.execCommand("copy");
+    }
+
     onChangeTokenID(e)
     {
       this.setState({slptokenid: e.target.value});
@@ -74,14 +85,19 @@ class App extends React.Component {
           selectimage: true
       });
 
-      var fr = new FileReader;
+      var fr = new FileReader();
 
       fr.onload = function()
       {
-        var hash = require("object-hash");
+        let sha256_ = require('sha256');
+        let atob_ = require('atob');
+        let base64tobin = require("./modules/base64tobin");
+        let binSz = atob_(fr.result.split("base64,")[1]);
+        let bin = base64tobin(binSz);
+
         this.setState({ 
           previewimage:fr.result,
-          imagehash: hash(fr.result)
+          imagehash: sha256_(bin)
         });
 
         this.setState({ sampledata: { ...this.state.sampledata, signature: signMessage(this.state.imagehash, this.state.sampledata.privatekey)}});
@@ -107,8 +123,7 @@ class App extends React.Component {
       {
         alert("fetch slp address failed");
         throw e;
-      }
-      
+      }     
       
     }
 
@@ -137,7 +152,7 @@ class App extends React.Component {
     
     onClickSubmit(e)
     {
-      var formData = new FormData;
+      var formData = new FormData();
       formData.append("file", this.state.pictures[this.state.pictures.length-1]);
       formData.append("tokenid", this.state.slptokenid);
       formData.append("signature", this.state.signature);
@@ -151,7 +166,7 @@ class App extends React.Component {
       })
       .then(function(response){
         console.log(response);
-        if(response.data.status == true)
+        if(response.data.status === true)
         {
           alert(response.data.message);
         }
@@ -182,10 +197,12 @@ class App extends React.Component {
                   withIcon={true}
                   buttonText='Choose images'
                   onChange={this.onDrop}
-                  imgExtension={['.jpg', '.gif', '.png', '.gif', '.svg']}
+                  imgExtension={['.jpg', '.png', '.svg']}
                   maxFileSize={5242880}
                   key="imageuploader"
+                  accept="image/x-png, image/svg+xml, image/jpeg"
                   name="file"
+                  label="Max file size: 5mb, accepted: svg, png, jpg"
                 /> 
               </Grid>
               {
@@ -194,7 +211,7 @@ class App extends React.Component {
                   <Grid container className={classes.fadein}>
                     <Grid item xs={3}>
                       {
-                        this.state.previewimage && this.state.previewimage.length != 0 && 
+                        this.state.previewimage && this.state.previewimage.length !== 0 && 
                         <Image src={this.state.previewimage} />
                       }
                       
@@ -204,10 +221,24 @@ class App extends React.Component {
                         className={classes.imagedata}
                         id="outlined-multiline-static"
                         label="Image Hash"
-                        disabled
                         variant="outlined"
                         value={this.state.imagehash}
+                        InputProps={{
+                          endAdornment: (
+                            <InputAdornment position="start">
+                              <CopyToClipboard text={this.state.imagehash}>
+                              
+                                <IconButton
+                                  onClick={this.onCopyImageHash}
+                                >
+                                  <FileCopyIcon />
+                                </IconButton>
+                              </CopyToClipboard>
+                            </InputAdornment>
+                          ),
+                        }}
                       />
+
                     </Grid>
                   </Grid>              
                 </Fade>
@@ -235,11 +266,24 @@ class App extends React.Component {
                     className={classes.imagedata}
                     id="outlined-multiline-static"
                     label="SLP Address"
-                    disabled
                     variant="outlined"
                     value={this.state.slpaddress.legacy}
                     validators={['required']}
                     errorMessages={['this field is required']}
+                    InputProps={{
+                      endAdornment: (
+                        <InputAdornment position="start">
+                          <CopyToClipboard text={this.state.slpaddress.legacy}>
+                          
+                            <IconButton
+                              onClick={this.onCopyImageHash}
+                            >
+                              <FileCopyIcon />
+                            </IconButton>
+                          </CopyToClipboard>
+                        </InputAdornment>
+                      ),
+                    }}
                 />
               </Grid>
               <Grid item xs={12}>

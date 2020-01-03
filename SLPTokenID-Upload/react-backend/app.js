@@ -12,7 +12,8 @@ const fileUpload = require('express-fileupload');
 const bitcoin = require("./modules/bitcoin");
 const sharp = require('sharp');
 const btoa = require("btoa");
-const hash = require("object-hash");
+const sha256 = require('sha256');
+//const hash = require("object-hash");
 
 // github api module
 const Octokat = require("octokat");
@@ -49,7 +50,7 @@ app.use(fileUpload({useTempFiles:false}));
 app.post("/upload", async function(req, res, next){
   try {
       if(!req.files) {
-          return res.send({
+          return res.json({
               status: false,
               message: 'No file uploaded'
           });
@@ -58,7 +59,7 @@ app.post("/upload", async function(req, res, next){
           // check if the tokenid and genesis addres is validate
           if(req.body.tokenid === null | undefined)
           {
-            return res.send({
+            return res.json({
               status: false,
               message: "No Token ID"
             });
@@ -66,108 +67,123 @@ app.post("/upload", async function(req, res, next){
           let genesis_address = await bitcoin.getSLPAddressFromTokenID(req.body.tokenid);
           if(req.body.legacy != bitcoin.getLegacyFromSLPAddress(genesis_address))
           {
-            return res.send({
+            return res.json({
               status: false,
               message: "Invalidate Genesis Address"
+            });
+          }
+
+          
+          // upload files
+          let file = req.files.file;
+
+           // verify the upload request
+           try{
+            if(!bitcoin.verifyMessage(sha256(file.data), req.body.signature, req.body.legacy))
+            {
+              return res.json({
+                status: false,
+                message: 'Not Verified Request'
+              });
+            }
+          }
+          catch(e){
+            return res.json({
+              status: false,
+              message: 'Not Verified Request'
             });
           }
 
           // check if the repo-fork is done
           if(repo_fork == null)
           {
-            return res.send({status: false, message: "Not Configured"});
+            return res.json({status: false, message: "Not Configured"});
           }
 
-          // upload files
-          let file = req.files.file;
-          var filename = req.body.tokenid + "." + file.name.split(".").pop();
-
-          if(file.mimetype != "image/svg+xml" && file.mimetype != "image/png")
+          
+          if(file.mimetype !== "image/svg+xml" 
+              && file.mimetype !== "image/png"
+              && file.mimetype !== "image/jpeg")
           {
-            return res.send({status: false, message: "Not available image type"});
+            return res.json({status: false, message: "Not available image type"});
           }
 
           var filepath = file.mimetype == "image/svg+xml" ? ("./" + process.env.GIT_WORKDIR + "/" + process.env.ORIGIN_REPO + "/svg/") : 
-                                      ("./" + process.env.GIT_WORKDIR + "/" + process.env.ORIGIN_REPO + "/original/") ;
-          file.mv(filepath + filename, function(err){
-            if (err)
-              return res.send({status: false, message: "File Upload error", error: err});
+                                      ("./" + process.env.GIT_WORKDIR + "/" + process.env.ORIGIN_REPO + "/original/") ;         
+          var filename = req.body.tokenid + "." + (file.mimetype === "image/jpeg" ? 'png' : file.name.split(".").pop());
           
-            var buffer = btoa(file.data);
-
-            // verify the upload request
-            try{
-              if(!bitcoin.verifyMessage(hash("data:"+file.mimetype+";base64,"+buffer), req.body.signature, req.body.legacy))
-              {
-                return res.send({
-                  status: false,
-                  message: 'Not Verified Request'
-                });
-              }
-            }
-            catch(e){
-              return res.send({
-                status: false,
-                message: 'Not Verified Request'
-              });
-            }
-           
+          async function submitPR(){
+            var outputfilename = req.body.tokenid + "." + "png";
             
-            async function submitPR(){
-              var outputfilename = req.body.tokenid + "." + "png";
-              
-              // copy and optimize the images
-              await sharp(filepath+filename)
-                .resize(32, 32)
-                .toFormat("png")
-                .toFile("./" + process.env.GIT_WORKDIR + "/" + process.env.ORIGIN_REPO + "/32/"+outputfilename)
-                .then(
-                  (resolve) => { console.log("done") },
-                  (err) => { console.log("error", err) }
-                );
-              
-
-              await sharp(filepath + filename)
-                .resize(64, 64)
-                .toFormat("png")
-                .toFile("./" + process.env.GIT_WORKDIR + "/" + process.env.ORIGIN_REPO + "/64/"+outputfilename)
-                .then(
-                  (resolve) => { console.log("done") },
-                  (err) => { console.log("error", err) }  
-                );
-
-              await sharp(filepath + filename)
-                .resize(128, 128)
-                .toFormat("png")
-                .toFile("./" + process.env.GIT_WORKDIR + "/" + process.env.ORIGIN_REPO + "/128/"+outputfilename)
-                .then(
-                  (resolve) => { console.log("done") },
-                  (err) => { console.log("error", err) }
-                );
-
-              // push content
-              console.log("pushing updates ... ");
-              const commitMessage = `adding ${req.body.tokenname}`;
-              const commit = await simplegit_helper.push(commitMessage, process.env.GITHUB_BRANCHNAME);  
-              console.log("pushied updates: ", commit.commit);
-              const sha_commit = await helper.getFullShaCommit(repo_fork, commit.commit, process.env.GITHUB_BRANCHNAME)
-              const comment = `Message: \n \`\`\`${req.body.tokenid}\`\`\` \n Genesis Address: \n \`\`\`${req.body.legacy}\`\`\` \n Signature: \n \`\`\`${req.body.signature}\`\`\``;
-              if(sha_commit != "")
-              {
-                console.log("adding comment");
-                await helper.addComment(repo_fork, sha_commit, comment);
-                console.log("comment added")
-                await helper.doPullRequestAndMerge(process.env.GITHUB_BRANCHNAME, process.env.GITHUB_USERNAME, commitMessage, null, false);
-                console.log("created pull request")
-              }
-              
-              console.log("All Done");
-              return res.send({status: true, message: "File uploaded"});
-              
-            };
+            // copy and optimize the images
+            await sharp(new Buffer(file.data.buffer))
+              .resize(32, 32)
+              .toFormat("png")
+              .toFile("./" + process.env.GIT_WORKDIR + "/" + process.env.ORIGIN_REPO + "/32/"+outputfilename)
+              .then(
+                (resolve) => { console.log("done") },
+                (err) => { console.log("error", err) }
+              );
             
-            submitPR();
-          });
+
+            await sharp(new Buffer(file.data.buffer))
+              .resize(64, 64)
+              .toFormat("png")
+              .toFile("./" + process.env.GIT_WORKDIR + "/" + process.env.ORIGIN_REPO + "/64/"+outputfilename)
+              .then(
+                (resolve) => { console.log("done") },
+                (err) => { console.log("error", err) }  
+              );
+
+            await sharp(new Buffer(file.data.buffer))
+              .resize(128, 128)
+              .toFormat("png")
+              .toFile("./" + process.env.GIT_WORKDIR + "/" + process.env.ORIGIN_REPO + "/128/"+outputfilename)
+              .then(
+                (resolve) => { console.log("done") },
+                (err) => { console.log("error", err) }
+              );
+
+            // push content
+            console.log("pushing updates ... ");
+            const commitMessage = `adding ${req.body.tokenname}`;
+            const commit = await simplegit_helper.push(commitMessage, process.env.GITHUB_BRANCHNAME);  
+            console.log("pushied updates: ", commit.commit);
+            const sha_commit = await helper.getFullShaCommit(repo_fork, commit.commit, process.env.GITHUB_BRANCHNAME)
+            const comment = `Message: \n \`\`\`${req.body.tokenid}\`\`\` \n Genesis Address: \n \`\`\`${req.body.legacy}\`\`\` \n Signature: \n \`\`\`${req.body.signature}\`\`\``;
+            if(sha_commit != "")
+            {
+              console.log("adding comment");
+              await helper.addComment(repo_fork, sha_commit, comment);
+              console.log("comment added")
+              await helper.doPullRequestAndMerge(process.env.GITHUB_BRANCHNAME, process.env.GITHUB_USERNAME, commitMessage, null, false);
+              console.log("created pull request")
+            }
+            
+            console.log("All Done");
+            return res.json({status: true, message: "File uploaded"});
+            
+          };
+          
+          if(file.mimetype === "image/svg+xml" || file.mimetype === "image/png")
+          {
+            file.mv(filepath + filename, function(err){
+              if (err)
+                return res.json({status: false, message: "File Upload error", error: err});
+                
+              submitPR();
+            });
+          }
+          else {
+            await sharp(new Buffer(file.data.buffer))
+              .toFormat('png')
+              .toFile(filepath + filename)
+              .then(
+                (resolve) => { submitPR(); },
+                (err) => { console.log("error", err); }
+              )
+          }
+          
       }
   } catch (err) {
       res.status(500).send(err);
@@ -186,7 +202,7 @@ app.use(function(err, req, res, next) {
   res.locals.message = err.message;
   res.locals.error = req.app.get('env') === 'development' ? err : {};
 
-  return res.send({status: err.status || 500, message: "error"});
+  return res.json({status: err.status || 500, message: "error"});
 });
 
 // get fork repo

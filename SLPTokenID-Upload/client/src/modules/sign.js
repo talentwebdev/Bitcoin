@@ -4,8 +4,8 @@ export function signMessage(message, key)
     var bitcore = require("bitcore-lib");
 
     var privateKey = new bitcore.PrivateKey(key);
-    var message = new bitcore.Message(message);
+    var message_obj = new bitcore.Message(message);
 
-    var signature = message.sign(privateKey);
+    var signature = message_obj.sign(privateKey);
     return signature
 }
