@@ -2,7 +2,6 @@
 import {bitcore, Utils} from "slpjs"
 
 const axios = require("axios");
-const bota = require("btoa");
 
 export function signMessage(message, privateKey)
 {

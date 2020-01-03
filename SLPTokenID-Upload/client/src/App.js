@@ -38,7 +38,10 @@ class App extends React.Component {
  
     constructor(props) {
         super(props);
-        this.state = { pictures: [], previewimage: "", 
+        this.state = { 
+          pictures: [], 
+          previewimage: "", 
+          imagehash: "",
           selectimage: false,
           slpaddress: {
             fetchingaddress: false, slpaddress: "", fetchedaddress: false, wrongtoken: false, legacy: ""
@@ -75,8 +78,13 @@ class App extends React.Component {
 
       fr.onload = function()
       {
-        this.setState({ previewimage:fr.result });
-        this.setState({ sampledata: { ...this.state.sampledata, signature: signMessage(fr.result, this.state.sampledata.privatekey)}});
+        var hash = require("object-hash");
+        this.setState({ 
+          previewimage:fr.result,
+          imagehash: hash(fr.result)
+        });
+
+        this.setState({ sampledata: { ...this.state.sampledata, signature: signMessage(this.state.imagehash, this.state.sampledata.privatekey)}});
       }.bind(this);
 
       fr.readAsDataURL(picture[picture.length-1]);
@@ -108,7 +116,7 @@ class App extends React.Component {
     {
       if(this.state.previewimage.length > 0 && this.state.slpaddress.legacy > 0)
       {
-        this.setState({sampledata: {...this.state.sampledata, signature: bitcoin.signMessage(this.state.previewimage, this.state.sampledata.privatekey)}});
+        this.setState({sampledata: {...this.state.sampledata, signature: bitcoin.signMessage(this.state.imagehash, this.state.sampledata.privatekey)}});
       }
     }
 
@@ -142,7 +150,15 @@ class App extends React.Component {
         }
       })
       .then(function(response){
-        alert(response.data);
+        console.log(response);
+        if(response.data.status == true)
+        {
+          alert(response.data.message);
+        }
+        else
+        {
+          alert(response.data.message);
+        }
       })
       .catch(function(error){
         console.log("upload failed", error);
@@ -187,12 +203,10 @@ class App extends React.Component {
                       <TextField
                         className={classes.imagedata}
                         id="outlined-multiline-static"
-                        multiline
-                        label="Image Data"
-                        rows="20"
+                        label="Image Hash"
                         disabled
                         variant="outlined"
-                        value={this.state.previewimage}
+                        value={this.state.imagehash}
                       />
                     </Grid>
                   </Grid>              
@@ -267,37 +281,6 @@ class App extends React.Component {
           </Grid>
         </div>
       );
-      /*
-      return (
-        <form action="http://localhost:3001/upload" method="post" encType="multipart/form-data">
-          <ImageUploader
-              withIcon={true}
-              buttonText='Choose images'
-              onChange={this.onDrop}
-              imgExtension={['.jpg', '.gif', '.png', '.gif']}
-              maxFileSize={5242880}
-              key="imageuploader"
-              name="file"
-          /> 
-
-          {this.state.previewimage && <img src={this.state.previewimage} key="image" />}
-          {this.state.previewimage && <div style={{wordWrap:'break-word', height: "200px", overflow: "scroll", width: '100%'}}  key="textarea"> {this.state.previewimage} </div>}
-          <div>
-            <label> Token id: </label><input name="tokenid" onBlur={this.onInputTokenID} ></input> 
-            <label> Signature: </label><input name="signature" onChange={this.onInputSignature} value={this.state.signature}></input> 
-            <div>{this.state.slpaddress.fetchingaddress && <label> Looking up address</label>} </div>
-            <div>
-              {<label> Address: </label>}
-              { <input name="legacy" value={this.state.slpaddress.legacy}></input>}
-            </div>
-            <button type="submit" onClick={this.onClickSubmit}>Submit</button>
-          </div>
-          Address: <textarea value={this.state.sampledata.address}></textarea>
-          Private Key: <textarea value={this.state.sampledata.privatekey}></textarea>
-          Signature: <textarea value={this.state.sampledata.signature}></textarea>
-        </form>
-      );
-      */
     }
 }
 

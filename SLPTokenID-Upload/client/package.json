@@ -12,6 +12,7 @@
     "bitcore-message": "^1.0.4",
     "btoa": "^1.2.1",
     "material-ui-image": "^3.2.2",
+    "object-hash": "^2.0.1",
     "react": "^16.12.0",
     "react-dom": "^16.12.0",
     "react-images-upload": "^1.2.7",

@@ -9,12 +9,10 @@ const cors = require('cors');
 const bodyParser = require('body-parser');
 const fileUpload = require('express-fileupload');
 
-var indexRouter = require('./routes/index');
-var usersRouter = require('./routes/users');
-
-var FileReader = require('filereader')
-var bitcoin = require("./modules/bitcoin");
+const bitcoin = require("./modules/bitcoin");
 const sharp = require('sharp');
+const btoa = require("btoa");
+const hash = require("object-hash");
 
 // github api module
 const Octokat = require("octokat");
@@ -31,64 +29,75 @@ const simplegit_helper = git.init({
   work_dir: "./" + process.env.GIT_WORKDIR,
   repo_name: process.env.ORIGIN_REPO
 });
-var isCloned = false;
 console.log(process.env.GITHUB_USERNAME);
 console.log(process.env.GITHUB_PASSWORD);
 
 var app = express();
 
-// view engine setup
-app.set('views', path.join(__dirname, 'views'));
-app.set('view engine', 'jade');
-
 app.use(logger('dev'));
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 app.use(cookieParser());
-app.use(express.static(path.join(__dirname, 'public')));
 
 app.use(cors());
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({extended: true}));
 app.use(bodyParser({defer: true}));
-
-app.use('/', indexRouter);
-app.use('/users', usersRouter);
 app.use(fileUpload({useTempFiles:false}));
 
 
 app.post("/upload", async function(req, res, next){
   try {
       if(!req.files) {
-          res.send({
+          return res.send({
               status: false,
               message: 'No file uploaded'
           });
       } else {
-          //Use the name of the input field (i.e. "avatar") to retrieve the uploaded file
+
+          // check if the tokenid and genesis addres is validate
+          if(req.body.tokenid === null | undefined)
+          {
+            return res.send({
+              status: false,
+              message: "No Token ID"
+            });
+          }
+          let genesis_address = await bitcoin.getSLPAddressFromTokenID(req.body.tokenid);
+          if(req.body.legacy != bitcoin.getLegacyFromSLPAddress(genesis_address))
+          {
+            return res.send({
+              status: false,
+              message: "Invalidate Genesis Address"
+            });
+          }
+
+          // check if the repo-fork is done
+          if(repo_fork == null)
+          {
+            return res.send({status: false, message: "Not Configured"});
+          }
+
+          // upload files
           let file = req.files.file;
           var filename = req.body.tokenid + "." + file.name.split(".").pop();
 
-          if(repo_fork == null)
+          if(file.mimetype != "image/svg+xml" && file.mimetype != "image/png")
           {
-            return res.send("Not Configured");
+            return res.send({status: false, message: "Not available image type"});
           }
-          //Use the mv() method to place the file in upload directory (i.e. "uploads")
+
           var filepath = file.mimetype == "image/svg+xml" ? ("./" + process.env.GIT_WORKDIR + "/" + process.env.ORIGIN_REPO + "/svg/") : 
                                       ("./" + process.env.GIT_WORKDIR + "/" + process.env.ORIGIN_REPO + "/original/") ;
-
           file.mv(filepath + filename, function(err){
             if (err)
-              return res.status(500).send(err);
-            
-            var extension = file.name.split(".").pop();
-            var resize = require('./modules/resize');
-            let btoa = require("btoa");
+              return res.send({status: false, message: "File Upload error", error: err});
+          
             var buffer = btoa(file.data);
 
             // verify the upload request
             try{
-              if(!bitcoin("data:"+file.mimetype+";base64,"+buffer, req.body.signature, req.body.legacy))
+              if(!bitcoin.verifyMessage(hash("data:"+file.mimetype+";base64,"+buffer), req.body.signature, req.body.legacy))
               {
                 return res.send({
                   status: false,
@@ -104,7 +113,7 @@ app.post("/upload", async function(req, res, next){
             }
            
             
-            async function func(){
+            async function submitPR(){
               var outputfilename = req.body.tokenid + "." + "png";
               
               // copy and optimize the images
@@ -153,27 +162,12 @@ app.post("/upload", async function(req, res, next){
               }
               
               console.log("All Done");
-              return res.send("File uploaded");
+              return res.send({status: true, message: "File uploaded"});
               
             };
             
-            func();
+            submitPR();
           });
-          /*
-          let btoa = require("btoa");
-          var buffer = btoa(file.data);
-
-          //send response
-          res.send({
-              status: true,
-              message: 'File is uploaded',
-              data: {
-                  name: file.name,
-                  mimetype: file.mimetype,
-                  size: file.size
-              }
-          });
-          */
       }
   } catch (err) {
       res.status(500).send(err);
@@ -187,13 +181,12 @@ app.use(function(req, res, next) {
 
 // error handler
 app.use(function(err, req, res, next) {
+  
   // set locals, only providing error in development
   res.locals.message = err.message;
   res.locals.error = req.app.get('env') === 'development' ? err : {};
 
-  // render the error page
-  res.status(err.status || 500);
-  res.render('error');
+  return res.send({status: err.status || 500, message: "error"});
 });
 
 // get fork repo
@@ -205,14 +198,12 @@ async function gitInit()
   try{
     await simplegit_helper.clone();
     console.log("Repo Cloned");
-    isCloned = true;  
   }catch(error)
   {
 
   }
-  
-
 }
+
 helper.forkRepo(process.env.GITHUB_USERNAME)
   .then(fork => { 
     repo_fork = fork; 
