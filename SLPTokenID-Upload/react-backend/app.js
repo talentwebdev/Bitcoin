@@ -211,23 +211,58 @@ app.use(function(err, req, res, next) {
 // get fork repo
 async function gitInit()
 {
+  // check if the git directory exists, if exists remove them
+  const fs = require('fs');
+  let path = "./"+process.env.GIT_WORKDIR+"/"+process.env.ORIGIN_REPO;
+  if(fs.existsSync(path))
+  {
+    /*
+    console.log("previous git folder exists, removing them ... ");
+    var rimraf = require("rimraf");
+    rimraf.sync(path);
+    console.log("removed");
+    */
+   return;
+  }
+
   await helper.createNewBranch(repo_fork, process.env.GITHUB_BRANCHNAME);
 
   // clone repo
   try{
+    console.log("repo cloning ...");
     await simplegit_helper.clone();
     console.log("Repo Cloned");
   }catch(error)
   {
+    console.log("repo cloning error : ", error);
+  }
+}
+async function forkRepo()
+{
+  // check if the repo has been already forked
+  let octokat = new Octokat({
+    username: process.env.GITHUB_USERNAME, 
+    password: process.env.GITHUB_PASSWORD
+  });
+  let repo = await octokat.repos(process.env.GITHUB_USERNAME, process.env.ORIGIN_REPO).fetch();
+  if(repo.source == undefined || repo.parent == undefined)
+  {
+    console.log("forking .... ");
+    helper.forkRepo(process.env.GITHUB_USERNAME)
+      .then(fork => { 
+        console.log("repo is successfuly forked");
+        repo_fork = fork; 
 
+        gitInit();
+      });  
+  }
+  else
+  {
+    repo_fork = repo;
+    gitInit();
   }
 }
 
-helper.forkRepo(process.env.GITHUB_USERNAME)
-  .then(fork => { 
-    repo_fork = fork; 
 
-    gitInit();
-  });
-
+forkRepo();
 module.exports = app;
