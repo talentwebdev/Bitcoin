@@ -147,6 +147,9 @@ app.post("/upload", async function(req, res, next){
             // push content
             console.log("pushing updates ... ");
             const commitMessage = `adding ${req.body.tokenname}`;
+            console.log("pulling ... ");
+            await simplegit_helper.pull(process.env.GITHUB_BRANCHNAME);
+            console.log("pulling done ");
             const commit = await simplegit_helper.push(commitMessage, process.env.GITHUB_BRANCHNAME);  
             console.log("pushied updates: ", commit.commit);
             const sha_commit = await helper.getFullShaCommit(repo_fork, commit.commit, process.env.GITHUB_BRANCHNAME)

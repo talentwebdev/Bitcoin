@@ -28,6 +28,14 @@ function init(opts)
         })
     }
 
+    helper.pull = async function(branchName)
+    {
+        return new Promise((resolve) => {
+            require("simple-git")(options.work_dir+"/"+options.repo_name).silent(true)
+                                .pull("origin", branchName, (err, data) => { resolve(); })
+        })
+    }
+
     helper.log = async function()
     {
         return new Promise((resolve) => {

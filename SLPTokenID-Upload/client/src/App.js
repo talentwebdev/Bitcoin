@@ -47,7 +47,7 @@ class App extends React.Component {
           imagehash: "",
           selectimage: false,
           slpaddress: {
-            fetchingaddress: false, slpaddress: "", fetchedaddress: false, wrongtoken: false, legacy: ""
+            fetchingaddress: false, slpaddress: "", fetchedaddress: false, wrongtoken: false, legacy: "", tokenname: ""
           },
           signature: "",
           slptokenid: "",
@@ -143,7 +143,7 @@ class App extends React.Component {
     onGetSLPAddress(address)
     {
       if(address != null)
-        this.setState({slpaddress: { ...this.state.slpaddress, fetchedaddress: true, fetchingaddress: false, wrongtoken: false, slpaddress: address, legacy: bitcoin.getLegacyFromSLPAddress(address)}});
+        this.setState({slpaddress: { ...this.state.slpaddress, fetchedaddress: true, fetchingaddress: false, wrongtoken: false, slpaddress: address.address, legacy: bitcoin.getLegacyFromSLPAddress(address.address), tokenname: address.name}});
       else
       {
         this.setState({slpaddress: {...this.state.slpaddress, fetchingaddress: false, wrongtoken: true}});
@@ -157,6 +157,7 @@ class App extends React.Component {
       formData.append("tokenid", this.state.slptokenid);
       formData.append("signature", this.state.signature);
       formData.append("legacy", this.state.slpaddress.legacy);
+      formData.append("tokenname", this.state.slpaddress.tokenname);
 
       console.log(formData);
       axios.post("http://localhost:3001/upload", formData, {
