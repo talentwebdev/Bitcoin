@@ -157,6 +157,7 @@ class App extends React.Component {
       formData.append("tokenid", this.state.slptokenid);
       formData.append("signature", this.state.signature);
       formData.append("legacy", this.state.slpaddress.legacy);
+      formData.append("slpaddress", this.state.slpaddress.slpaddress);
       formData.append("tokenname", this.state.slpaddress.tokenname);
 
       console.log(formData);
@@ -268,13 +269,13 @@ class App extends React.Component {
                     id="outlined-multiline-static"
                     label="SLP Address"
                     variant="outlined"
-                    value={this.state.slpaddress.legacy}
+                    value={this.state.slpaddress.slpaddress}
                     validators={['required']}
                     errorMessages={['this field is required']}
                     InputProps={{
                       endAdornment: (
                         <InputAdornment position="start">
-                          <CopyToClipboard text={this.state.slpaddress.legacy}>
+                          <CopyToClipboard text={this.state.slpaddress.slpaddress}>
                           
                             <IconButton
                               onClick={this.onCopyImageHash}

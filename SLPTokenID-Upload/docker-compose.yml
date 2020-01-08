@@ -4,11 +4,21 @@ services:
     backend: 
         build: 
             context: ./react-backend
+        volumes: 
+            - ./react-backend/app.js:/usr/src/app/app.js
+            - ./react-backend/modules:/usr/src/app/modules
+            - ./react-backend/.env:/usr/src/app/.env
+            - my-volumes:/usr/src/app/gitrepo
         ports: 
             - "3001:3001"
 
     frontend: 
         build:
             context: "./client"
+        volumes: 
+            - ./client/src:/usr/src/app/client/src
         ports: 
             - "3000:3000"
+volumes:
+    my-volumes: {}
+

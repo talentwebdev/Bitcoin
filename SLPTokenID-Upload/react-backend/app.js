@@ -65,7 +65,8 @@ app.post("/upload", async function(req, res, next){
             });
           }
           let genesis_address = await bitcoin.getSLPAddressFromTokenID(req.body.tokenid);
-          if(req.body.legacy != bitcoin.getLegacyFromSLPAddress(genesis_address))
+          let legacy = bitcoin.getLegacyFromSLPAddress(req.body.slpaddress);
+          if(req.body.slpaddress != genesis_address)
           {
             return res.json({
               status: false,
@@ -78,8 +79,9 @@ app.post("/upload", async function(req, res, next){
           let file = req.files.file;
 
            // verify the upload request
+           
            try{
-            if(!bitcoin.verifyMessage(sha256(file.data), req.body.signature, req.body.legacy))
+            if(!bitcoin.verifyMessage(sha256(file.data), req.body.signature, legacy))
             {
               return res.json({
                 status: false,
@@ -153,7 +155,7 @@ app.post("/upload", async function(req, res, next){
             const commit = await simplegit_helper.push(commitMessage, process.env.GITHUB_BRANCHNAME);  
             console.log("pushied updates: ", commit.commit);
             const sha_commit = await helper.getFullShaCommit(repo_fork, commit.commit, process.env.GITHUB_BRANCHNAME)
-            const comment = `Message: \n \`\`\`${req.body.tokenid}\`\`\` \n Genesis Address: \n \`\`\`${req.body.legacy}\`\`\` \n Signature: \n \`\`\`${req.body.signature}\`\`\``;
+            const comment = `Message: \n \`\`\`${req.body.tokenid}\`\`\` \n Genesis Address: \n \`\`\`${req.body.slpaddress}\`\`\` \n Signature: \n \`\`\`${req.body.signature}\`\`\``;
             if(sha_commit != "")
             {
               console.log("adding comment");
