@@ -118,35 +118,33 @@ app.post("/upload", async function(req, res, next){
             var outputfilename = req.body.tokenid + "." + "png";
             
             // copy and optimize the images
+            //var filecontent = (file.mimetype == "image/svg+xml" ? (filepath + filename) : new Buffer(file.data.buffer));
+            const fs = require('fs');
+            var readFileSync = fs.readFileSync(filepath + filename);
+            //var filecontent = new Buffer.from(file.data.buffer);
             console.log("32*32");
-            await sharp(new Buffer(file.data.buffer))
+            var error = await sharp(readFileSync)
               .resize(32, 32)
               .toFormat("png")
               .toFile("./" + process.env.GIT_WORKDIR + "/" + process.env.ORIGIN_REPO + "/32/"+outputfilename)
-              .then(
-                (resolve) => { console.log("done") },
-                (err) => { console.log("error", err) }
-              );
+              .then(data => {console.log("done", data)})
+              .catch(err => { console.log("error", err)});
             
             console.log("64*64");
-            await sharp(new Buffer(file.data.buffer))
+            await sharp(readFileSync)
               .resize(64, 64)
               .toFormat("png")
               .toFile("./" + process.env.GIT_WORKDIR + "/" + process.env.ORIGIN_REPO + "/64/"+outputfilename)
-              .then(
-                (resolve) => { console.log("done") },
-                (err) => { console.log("error", err) }  
-              );
-            
+              .then(data => {console.log("done", data)})
+              .catch(err => { console.log("error", err)});
+
             console.log("128*128");
-            await sharp(new Buffer(file.data.buffer))
+            await sharp(readFileSync)
               .resize(128, 128)
               .toFormat("png")
               .toFile("./" + process.env.GIT_WORKDIR + "/" + process.env.ORIGIN_REPO + "/128/"+outputfilename)
-              .then(
-                (resolve) => { console.log("done") },
-                (err) => { console.log("error", err) }
-              );
+              .then(data => {console.log("done", data)})
+              .catch(err => { console.log("error", err)});
 
             // push content
             console.log("pushing updates ... ");
@@ -165,10 +163,11 @@ app.post("/upload", async function(req, res, next){
               console.log("comment added")
               await helper.doPullRequestAndMerge(process.env.GITHUB_BRANCHNAME, process.env.GITHUB_USERNAME, commitMessage, null, false);
               console.log("created pull request")
+              console.log("All Done");
+              return res.json({status: true, message: "File uploaded"});
             }
             
-            console.log("All Done");
-            return res.json({status: true, message: "File uploaded"});
+            return res.json({status: false, message: "Can not commit updates"});
             
           };
           
@@ -184,11 +183,9 @@ app.post("/upload", async function(req, res, next){
           else {
             await sharp(new Buffer(file.data.buffer))
               .toFormat('png')
-              .toFile(filepath + filename)
-              .then(
-                (resolve) => { submitPR(); },
-                (err) => { console.log("error", err); }
-              )
+              .toFile(filepath + filename);
+
+              submitPR();
           }
           
       }

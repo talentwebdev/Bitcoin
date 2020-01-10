@@ -30,9 +30,18 @@ function init(opts)
 
     helper.pull = async function(branchName)
     {
-        return new Promise((resolve) => {
+        return new Promise((resolve, reject) => {
             require("simple-git")(options.work_dir+"/"+options.repo_name).silent(true)
-                                .pull("origin", branchName, (err, data) => { resolve(); })
+                                .pull("origin", branchName, (err, data) => { 
+                                    if(err == null)                                    
+                                        resolve(); 
+                                    else
+                                    {
+                                        reject();
+                                        console.log("pulling error occured");
+                                    }
+                                        
+                                })
         })
     }
 
