@@ -118,6 +118,7 @@ app.post("/upload", async function(req, res, next){
             var outputfilename = req.body.tokenid + "." + "png";
             
             // copy and optimize the images
+            console.log("32*32");
             await sharp(new Buffer(file.data.buffer))
               .resize(32, 32)
               .toFormat("png")
@@ -127,7 +128,7 @@ app.post("/upload", async function(req, res, next){
                 (err) => { console.log("error", err) }
               );
             
-
+            console.log("64*64");
             await sharp(new Buffer(file.data.buffer))
               .resize(64, 64)
               .toFormat("png")
@@ -136,7 +137,8 @@ app.post("/upload", async function(req, res, next){
                 (resolve) => { console.log("done") },
                 (err) => { console.log("error", err) }  
               );
-
+            
+            console.log("128*128");
             await sharp(new Buffer(file.data.buffer))
               .resize(128, 128)
               .toFormat("png")
