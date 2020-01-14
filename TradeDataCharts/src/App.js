@@ -1,10 +1,14 @@
 import React from 'react';
 import ExchangeCharts from "./charts/ExchangeCharts";
 
-function App() {
-  return (
-    <ExchangeCharts></ExchangeCharts>
-  );
+class App extends React.Component{
+
+  render()
+  {
+    return (
+      <ExchangeCharts ></ExchangeCharts>
+    );
+  }
 }
 
 export default App;

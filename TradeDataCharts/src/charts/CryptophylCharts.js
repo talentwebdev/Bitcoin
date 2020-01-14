@@ -1,11 +1,11 @@
 import React from 'react';
 import Chart from "react-apexcharts";
-import exchange from "./../modules/exchange";
+import crypto from "./../modules/cryptophyl";
 import ChartsToolbar from "../toolbar/exchangetoolbar";
 
-var  exchange_helper;
+var  crypto_helper;
 
-class ExchangeCharts extends React.Component{
+class CryptophylCharts extends React.Component{
     constructor(props)
     {
         super(props);
@@ -113,32 +113,32 @@ class ExchangeCharts extends React.Component{
         };
 
 
-        exchange_helper = exchange("wss://api.exchange.bitcoin.com/api/2/ws",
+        crypto_helper = crypto("wss://api.exchange.bitcoin.com/api/2/ws",
                             this.state.exchange_option,
                             null, 
                             this.onUpdate, 
                             null);
-        exchange_helper.connect();
+        crypto_helper.connect();
     }
 
     getMinData()
     {
-        return exchange_helper.minData;
+        return crypto_helper.minData;
     }
 
     getMaxData()
     {
-        return exchange_helper.maxData;
+        return crypto_helper.maxData;
     }
     
     getMinVolume()
     {
-        return exchange_helper.minVolume;
+        return crypto_helper.minVolume;
     }
 
     getMaxVolume()
     {
-        return exchange_helper.maxVolume * 3;
+        return crypto_helper.maxVolume * 3;
     }
 
     onUpdate(data) {
@@ -192,9 +192,9 @@ class ExchangeCharts extends React.Component{
             }
         }));
 
-        exchange_helper.close();
-        exchange_helper.option.period = period;
-        exchange_helper.connect();
+        crypto_helper.close();
+        crypto_helper.option.period = period;
+        crypto_helper.connect();
     }
 
     render()
@@ -212,4 +212,4 @@ class ExchangeCharts extends React.Component{
     }
 }
 
-export default ExchangeCharts;
+export default CryptophylCharts;
